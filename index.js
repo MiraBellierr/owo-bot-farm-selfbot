@@ -123,6 +123,7 @@ client.on("messageCreate", async (message) => {
 
 		if (!gemItems.length) {
 			channel.sendTyping();
+			await randomWait(1, 3);
 			channel.send("owo inv");
 		}
 
