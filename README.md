@@ -33,13 +33,13 @@ owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" an
 
 ### start
 
-**start** (console command): Start the script.
-**owo hh** (in-chat command): Type this in the Discord channel. It will reassign the channel with the current channel and start the script.
+- **start**: (console command) Start the script.
+- **owo hh**: (in-chat command) Type this in the Discord channel. It will reassign the channel with the current channel and start the script.
 
 ### stop
 
-**stop** (console command): Stop the script
-**owo bb** (in-chat command): Type this in the Discord channel. It will stop the script.
+- **stop**: (console command) Stop the script
+- **owo bb**: (in-chat command) Type this in the Discord channel. It will stop the script.
 
 ## 🛠 Installation
 
