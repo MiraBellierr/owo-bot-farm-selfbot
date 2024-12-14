@@ -117,9 +117,8 @@ client.on("messageCreate", async (message) => {
 		await processHuntAndBattle(message);
 	} else if (
 		message.author.id === "408785106942164992" &&
-		message.content.includes(
-			`**⚠️ |** <@${client.user.id}>, ar​e y​ou a​ re​al human​?`
-		)
+		message.components.length &&
+		message.components[0].components[0].label === "Verify"
 	) {
 		playSoundEffect("./assets/157795.mp3");
 		console.log(chalk.redBright("[Error]: Verification Needed!"));
