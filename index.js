@@ -47,7 +47,7 @@ const rl = readline.createInterface({
 rl.on("line", (input) => {
 	const command = input.trim();
 	switch (command) {
-		case "owo hh":
+		case "start":
 			spam = true;
 			console.log(chalk.green("[COMMAND]: Spam started."));
 			if (!channel)
@@ -57,7 +57,7 @@ rl.on("line", (input) => {
 					)
 				);
 			break;
-		case "owo bb":
+		case "stop":
 			spam = false;
 			console.log(chalk.red("[COMMAND]: Spam stopped."));
 			break;
