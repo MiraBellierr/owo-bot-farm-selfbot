@@ -1,8 +1,15 @@
+<img width="120" height="120" align="left" style="float: left; margin: 0 10px 0 0;" alt="cruncy cat" src="https://i.pinimg.com/736x/20/c5/08/20c508cc4173e9e179d99d15b4ba74ed.jpg">
+
 # OwObot Selfbot Farming Script
+
+A friendly OwObot farming script. Written in Javascript using NodeJS and discord.js.
 
 ## ❤️ About
 
 owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" and "owo battle" commands. It is built using discord.js-selfbot-v13 package for the utilization of the Discord API interaction.
+
+## 📷 Screenshot
+![console](https://raw.githubusercontent.com/MiraBellierr/owo-bot-farm-selfbot/refs/heads/main/assets/1734133655713.png)
 
 ## 🧡 Features
 
