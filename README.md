@@ -1,4 +1,4 @@
-# Sakura Backend
+# OwObot Selfbot Farming Script
 
 ## ❤️ About
 
