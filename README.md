@@ -9,6 +9,7 @@ A friendly OwObot farming script. Written in Javascript using NodeJS and discord
 owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" and "owo battle" commands. It is built using discord.js-selfbot-v13 package for the utilization of the Discord API interaction.
 
 ## 📷 Screenshot
+
 ![console](https://raw.githubusercontent.com/MiraBellierr/owo-bot-farm-selfbot/refs/heads/main/assets/1734133655713.png)
 
 ## 🧡 Features
@@ -18,6 +19,7 @@ owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" an
 - 📋 **Auto Equip Gems**: Automatically equip any gem that has expired.
 - 📞 **Stop when Captcha Appear**: It will stop when the human verification message appear.
 - 🔒 **Pretty Console**: It will send just enough information in the terminal.
+- 🎵 **Beep Sound**: Make a beep sound when success, make a warning sound when failed. Disable by default.
 
 ## 🔧 How to Use
 
@@ -40,6 +42,14 @@ owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" an
 
 - **stop**: (console command) Stop the script
 - **owo bb**: (in-chat command) Type this in the Discord channel. It will stop the script.
+
+### sound
+
+To enable the sound, simply start the script with:
+
+```
+node . --sound=true
+```
 
 ## 🛠 Installation
 
@@ -65,9 +75,7 @@ owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" an
 
 3. Configure the environment:
    Create a `.env` file in the project root and add the following:
-   `
-TOKEN=Your-Discord-Token
-`
+   `TOKEN=Your-Discord-Token`
 
 ## 🚀 Running the script
 
