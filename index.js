@@ -170,17 +170,27 @@ const handleMissingGems = async (gemAmounts) => {
 	for (const gemType in gemAmounts) {
 		if (gemAmounts[gemType] === 0) {
 			console.log(chalk.yellow(`[INFO]: ${gemType} has no remaining amount.`));
-			const matchingGem = gemItems.find(
+
+			// Find all matching gems of the current type that have a positive amount
+			const matchingGems = gemItems.filter(
 				(g) => g.name.includes(gemType) && g.amount > 0
 			);
-			if (matchingGem) {
+
+			if (matchingGems.length) {
+				// Find the gem with the highest ID from the matching gems
+				const highestIdGem = matchingGems.reduce((highest, current) =>
+					current.id > highest.id ? current : highest
+				);
+
 				channel.sendTyping();
 				await randomWait(1, 3);
-				channel.send(`owo use ${matchingGem.id}`);
-				matchingGem.amount -= 1;
+				channel.send(`owo use ${highestIdGem.id}`);
+
+				// Decrease the amount of the gem used
+				highestIdGem.amount -= 1;
 				console.log(
 					chalk.green(
-						`[ACTION]: Used gem ID ${matchingGem.id}. Remaining amount: ${matchingGem.amount}`
+						`[ACTION]: Used gem ID ${highestIdGem.id}. Remaining amount: ${highestIdGem.amount}`
 					)
 				);
 			}
