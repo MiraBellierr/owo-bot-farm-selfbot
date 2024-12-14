@@ -65,7 +65,7 @@ owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" an
 
 3. Configure the environment:
    Create a `.env` file in the project root and add the following:
-   `env
+   `
 TOKEN=Your-Discord-Token
 `
 
