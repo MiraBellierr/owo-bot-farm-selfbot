@@ -19,7 +19,7 @@ owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" an
 - 📋 **Auto Equip Gems**: Automatically equip any gem that has expired.
 - 📞 **Stop when Captcha Appear**: It will stop when the human verification message appear.
 - 🔒 **Pretty Console**: It will send just enough information in the terminal.
-- 🎵 **Beep Sound**: Make a beep sound when success, make a warning sound when failed. Disable by default.
+- 🎵 **Beep Sound**: Make a beep sound and a loud sound for heartbeat and verification warning. Disable by default.
 
 ## 🔧 How to Use
 
