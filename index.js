@@ -3,6 +3,7 @@ import readline from "readline";
 import chalk from "chalk";
 import dotenv from "dotenv";
 import player from "play-sound";
+import { spawn } from "child_process";
 
 dotenv.config();
 
@@ -52,6 +53,22 @@ const playSoundEffect = (file) => {
 			if (err) console.error(err);
 		});
 	}
+};
+
+const restartProcess = () => {
+	console.log(chalk.yellow("[INFO]: Restarting process due to verification."));
+	playSoundEffect("./assets/157795.mp3");
+
+	// Spawn a new instance of the script with the same arguments
+	const child = spawn(process.argv[0], process.argv.slice(1), {
+		stdio: "inherit",
+	});
+
+	child.on("close", (code) => {
+		console.log(chalk.red(`[INFO]: Process exited with code ${code}.`));
+	});
+
+	process.exit();
 };
 
 rl.on("line", (input) => {
@@ -120,8 +137,8 @@ client.on("messageCreate", async (message) => {
 		message.components.length &&
 		message.components[0].components[0].label === "Verify"
 	) {
-		playSoundEffect("./assets/157795.mp3");
-		console.log(chalk.redBright("[Error]: Verification Needed!"));
+		spam = false;
+		restartProcess();
 	}
 });
 
@@ -170,13 +187,11 @@ const handleMissingGems = async (gemAmounts) => {
 		if (gemAmounts[gemType] === 0) {
 			console.log(chalk.yellow(`[INFO]: ${gemType} has no remaining amount.`));
 
-			// Find all matching gems of the current type that have a positive amount
 			const matchingGems = gemItems.filter(
 				(g) => g.name.includes(gemType) && g.amount > 0
 			);
 
 			if (matchingGems.length) {
-				// Find the gem with the highest ID from the matching gems
 				const highestIdGem = matchingGems.reduce((highest, current) =>
 					current.id > highest.id ? current : highest
 				);
@@ -185,7 +200,6 @@ const handleMissingGems = async (gemAmounts) => {
 				await randomWait(1, 3);
 				channel.send(`owo use ${highestIdGem.id}`);
 
-				// Decrease the amount of the gem used
 				highestIdGem.amount -= 1;
 				console.log(
 					chalk.green(
