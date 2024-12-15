@@ -11,41 +11,38 @@ const args = process.argv.slice(2);
 const client = new Client();
 let playSound = args.includes("--sound=true");
 
+// Global Variables
 const gemItems = [];
 let spam = false;
-let channel = null;
+let activeChannel = null;
+
+const gemTypeNames = {
+	gem1: "Hunting Gem",
+	gem3: "Empowering Gem",
+	gem4: "Lucky Gem",
+};
+
+const gemRarityNames = {
+	c: "Common",
+	u: "Uncommon",
+	r: "Rare",
+	e: "Epic",
+	l: "Legendary",
+	f: "Fable",
+};
 
 const rl = readline.createInterface({
 	input: process.stdin,
 	output: process.stdout,
 });
 
+// Utility Functions
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const randomWait = (minSeconds, maxSeconds) => {
-	const minMs = minSeconds * 1000;
-	const maxMs = maxSeconds * 1000;
-	return wait(Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs);
-};
-
-const convertSuperscriptToNumber = (superscriptString) => {
-	const superscriptMap = {
-		"⁰": "0",
-		"¹": "1",
-		"²": "2",
-		"³": "3",
-		"⁴": "4",
-		"⁵": "5",
-		"⁶": "6",
-		"⁷": "7",
-		"⁸": "8",
-		"⁹": "9",
-	};
-	return superscriptString
-		.split("")
-		.map((char) => superscriptMap[char] || char)
-		.join("");
-};
+const randomWait = (minSeconds, maxSeconds) =>
+	wait(
+		Math.floor(Math.random() * (maxSeconds - minSeconds + 1)) * 1000 +
+			minSeconds * 1000
+	);
 
 const playSoundEffect = (file) => {
 	if (playSound) {
@@ -55,129 +52,186 @@ const playSoundEffect = (file) => {
 	}
 };
 
+const logDivider = (label) => {
+	const width = 60;
+	const pad = Math.max(0, width - label.length - 2);
+	console.log(
+		chalk.blueBright(
+			`\n${"=".repeat(width)}\n= ${label}${" ".repeat(pad)}=\n${"=".repeat(
+				width
+			)}\n`
+		)
+	);
+};
+
+const logInfo = (msg) => console.log(chalk.cyan(`[INFO]: ${msg}`));
+const logWarning = (msg) => console.log(chalk.yellow(`[WARNING]: ${msg}`));
+const logError = (msg) => console.log(chalk.red(`[ERROR]: ${msg}`));
+const logSuccess = (msg) => console.log(chalk.green(`[SUCCESS]: ${msg}`));
+
+// Superscript Conversion
+const superscriptMap = {
+	"⁰": "0",
+	"¹": "1",
+	"²": "2",
+	"³": "3",
+	"⁴": "4",
+	"⁵": "5",
+	"⁶": "6",
+	"⁷": "7",
+	"⁸": "8",
+	"⁹": "9",
+};
+const convertSuperscriptToNumber = (superscriptString) =>
+	superscriptString
+		.split("")
+		.map((char) => superscriptMap[char] || char)
+		.join("");
+
+// Restart Process
 const restartProcess = () => {
-	console.log(chalk.yellow("[INFO]: Restarting process due to verification."));
+	logDivider("RESTARTING PROCESS");
+	logWarning("Verification required. Restarting...");
 	playSoundEffect("./assets/157795.mp3");
 
-	// Spawn a new instance of the script with the same arguments
 	const child = spawn(process.argv[0], process.argv.slice(1), {
 		stdio: "inherit",
 	});
-
-	child.on("close", (code) => {
-		console.log(chalk.red(`[INFO]: Process exited with code ${code}.`));
-	});
+	child.on("close", (code) => logError(`Process exited with code ${code}.`));
 
 	process.exit();
 };
 
+// Command Input Handler
 rl.on("line", (input) => {
 	const command = input.trim().toLowerCase();
 	switch (command) {
 		case "start":
 			spam = true;
-			console.log(chalk.green("[COMMAND]: Spam started."));
-			if (!channel) {
-				console.log(
-					chalk.yellow(
-						"[WARNING]: Please specify a channel by typing in a Discord channel first."
-					)
-				);
-			}
+			logSuccess("Spam started.");
+			if (!activeChannel)
+				logWarning("Specify a channel by typing in a Discord channel first.");
 			break;
 		case "stop":
 			spam = false;
-			console.log(chalk.red("[COMMAND]: Spam stopped."));
+			logWarning("Spam stopped. Pending last command execution.");
 			break;
 		default:
-			console.log(
-				chalk.red("[ERROR]: Unknown command. Use 'start' or 'stop'.")
-			);
+			logError("Unknown command. Use 'start' or 'stop'.");
 	}
 });
 
+// Discord Events
 client.on("ready", () => {
-	console.log(chalk.cyan(`\n[INFO]: Logged in as ${client.user.username}!`));
+	logDivider("OWOBOT FARMING SCRIPT");
+	logSuccess(`Logged in as ${client.user.username}`);
+	logSuccess(`Play Sound: ${playSound}`);
+	logSuccess("Commands:");
+	logSuccess("start   : to start the spam.");
+	logSuccess(
+		"stop   : to stop the spam. (note: it will still run the command one last time)"
+	);
 });
 
 client.on("messageCreate", async (message) => {
 	if (message.channel.type === "DM") return;
 
 	if (message.author.id === client.user.id) {
-		if (message.content === "owo hh") {
-			channel = message.channel;
-			spam = true;
-			console.log(chalk.green("[ACTION]: Channel set and spam started."));
-		} else if (message.content === "owo bb") {
-			spam = false;
-			console.log(chalk.red("[ACTION]: Spam stopped."));
-		}
-		if (!channel) {
-			channel = message.channel;
-			console.log(chalk.blue(`[INFO]: Channel set to #${channel.name}.`));
-		}
+		handleSelfCommands(message);
 	}
 
-	if (!channel || message.channel.id !== channel.id) return;
-
-	const myself = message.guild.members.me?.nickname || client.user.displayName;
-
-	if (message.content.includes(`**====== ${myself}'s Inventory ======**`)) {
-		console.log(chalk.cyan("[INFO]: Parsing inventory..."));
-		parseInventory(message.content);
-	}
-
-	if (
-		message.author.id === "408785106942164992" &&
-		message.cleanContent.includes(`**🌱 | ${myself}**, hunt`)
-	) {
-		await processHuntAndBattle(message);
-	} else if (
-		message.author.id === "408785106942164992" &&
-		message.components.length &&
-		message.components[0].components[0].label === "Verify"
-	) {
-		spam = false;
-		restartProcess();
+	if (activeChannel && message.channel.id === activeChannel.id) {
+		handleOwOCommands(message);
 	}
 });
 
+const handleSelfCommands = (message) => {
+	switch (message.content) {
+		case "owo hh":
+			activeChannel = message.channel;
+			spam = true;
+			logSuccess("Channel set and spam started.");
+			break;
+		case "owo bb":
+			spam = false;
+			logWarning("Spam stopped.");
+			break;
+		default:
+			if (!activeChannel) {
+				activeChannel = message.channel;
+				logInfo(`Channel set to #${activeChannel.name}.`);
+			}
+	}
+};
+
+const handleOwOCommands = async (message) => {
+	const myself = message.guild.members.me?.nickname || client.user.displayName;
+
+	if (message.content.includes(`**====== ${myself}'s Inventory ======**`)) {
+		logInfo("Parsing inventory...");
+		parseInventory(message.content);
+	}
+
+	if (message.author.id === "408785106942164992") {
+		if (message.cleanContent.includes(`**🌱 | ${myself}**, hunt`)) {
+			await processHuntAndBattle(message);
+		} else if (
+			message.components.length &&
+			message.components[0].components[0].label === "Verify"
+		) {
+			spam = false;
+			restartProcess();
+		}
+	}
+};
+
+// Inventory Parsing
 const parseInventory = (inventoryContent) => {
 	const regexInventory =
 		/`(\d+)`(<:|<a:)(cgem|ugem|rgem|egem|lgem|fgem)(\d+):\d+>(\W{2})/g;
 	let result;
 	while ((result = regexInventory.exec(inventoryContent)) !== null) {
 		const id = parseInt(result[1]);
-		const name = `${result[3]}${result[4]}`;
+		const rarityKey = result[3].charAt(0); // Extract the first letter (c, u, r, e, l, f)
+		const typeKey = `gem${result[4]}`; // Extract the gem type (gem1, gem3, gem4)
 		const amount = parseInt(convertSuperscriptToNumber(result[5]));
-		gemItems.push({ id, name, amount });
+
+		gemItems.push({
+			id,
+			type: gemTypeNames[typeKey] || typeKey,
+			rarity: gemRarityNames[rarityKey] || rarityKey,
+			amount,
+		});
 	}
-	console.log(chalk.green("[INVENTORY]:"), gemItems);
+
+	logSuccess("Inventory parsed successfully.");
+	console.table(gemItems, ["id", "type", "rarity", "amount"]);
 };
 
+// Processing Hunt and Battle
 const processHuntAndBattle = async (message) => {
-	console.log(chalk.cyan("[INFO]: Processing gems and handling hunt..."));
+	logDivider("HUNT AND BATTLE");
 	if (!gemItems.length) {
-		channel.sendTyping();
+		activeChannel.sendTyping();
 		await randomWait(1, 3);
-		channel.send("owo inv");
+		activeChannel.send("owo inv");
 	}
 
 	const gemAmounts = extractGemsLeft(message.content);
-	console.log(chalk.yellow("[GEMS LEFT]:"), gemAmounts);
+	logInfo("Gems Remaining:");
+	console.table(gemAmounts);
 
 	await handleMissingGems(gemAmounts);
-	if (spam) {
-		await spamHuntAndBattle();
-	}
+	if (spam) await spamHuntAndBattle();
 };
 
 const extractGemsLeft = (content) => {
-	const gemAmounts = { gem1: 0, gem3: 0, gem4: 0 };
+	const gemAmounts = { "Hunting Gem": 0, "Empowering Gem": 0, "Lucky Gem": 0 };
 	const regexGems = /(gem1|gem3|gem4):\d+>`\[(\d+)/g;
 	let result;
 	while ((result = regexGems.exec(content)) !== null) {
-		gemAmounts[result[1]] = parseInt(result[2]);
+		const typeName = gemTypeNames[result[1]] || result[1];
+		gemAmounts[typeName] = parseInt(result[2]);
 	}
 	return gemAmounts;
 };
@@ -185,10 +239,10 @@ const extractGemsLeft = (content) => {
 const handleMissingGems = async (gemAmounts) => {
 	for (const gemType in gemAmounts) {
 		if (gemAmounts[gemType] === 0) {
-			console.log(chalk.yellow(`[INFO]: ${gemType} has no remaining amount.`));
+			logWarning(`${gemType} has no remaining amount.`);
 
 			const matchingGems = gemItems.filter(
-				(g) => g.name.includes(gemType) && g.amount > 0
+				(gem) => gem.type === gemType && gem.amount > 0
 			);
 
 			if (matchingGems.length) {
@@ -196,31 +250,31 @@ const handleMissingGems = async (gemAmounts) => {
 					current.id > highest.id ? current : highest
 				);
 
-				channel.sendTyping();
+				activeChannel.sendTyping();
 				await randomWait(1, 3);
-				channel.send(`owo use ${highestIdGem.id}`);
+				activeChannel.send(`owo use ${highestIdGem.id}`);
 
 				highestIdGem.amount -= 1;
-				console.log(
-					chalk.green(
-						`[ACTION]: Used gem ID ${highestIdGem.id}. Remaining amount: ${highestIdGem.amount}`
-					)
+				logSuccess(
+					`Used ${highestIdGem.rarity} ${highestIdGem.type} (ID: ${highestIdGem.id}). Remaining: ${highestIdGem.amount}`
 				);
 			}
 		}
 	}
 };
 
+// Spamming Commands
 const spamHuntAndBattle = async () => {
-	console.log(chalk.blue("[SPAM]: Sending hunt and battle commands..."));
+	logDivider("SPAMMING COMMANDS");
 	await randomWait(15, 20);
-	channel.sendTyping();
-	channel.send("owo h");
+	activeChannel.sendTyping();
+	activeChannel.send("owo h");
 	await randomWait(1, 3);
-	channel.sendTyping();
-	channel.send("owo b");
-	console.log(chalk.green("[SPAM]: Sent..."));
+	activeChannel.sendTyping();
+	activeChannel.send("owo b");
+	logSuccess("Commands sent successfully.");
 	playSoundEffect("./assets/236676.mp3");
 };
 
+// Start Client
 client.login(process.env.TOKEN);
