@@ -114,7 +114,7 @@ rl.on("line", (input) => {
 			break;
 		case "stop":
 			spam = false;
-			logWarning("Spam stopped. Pending last command execution.");
+			logWarning("Stopping the spam...");
 			break;
 		default:
 			logError("Unknown command. Use 'start' or 'stop'.");
@@ -154,7 +154,7 @@ const handleSelfCommands = (message) => {
 			break;
 		case "owo bb":
 			spam = false;
-			logWarning("Spam stopped.");
+			logWarning("Stopping the spam...");
 			break;
 		default:
 			if (!activeChannel) {
@@ -274,6 +274,8 @@ const spamHuntAndBattle = async () => {
 	activeChannel.send("owo b");
 	logSuccess("Commands sent successfully.");
 	playSoundEffect("./assets/236676.mp3");
+
+	if (!spam) logSuccess("Successfully stopped the spam.");
 };
 
 // Start Client
