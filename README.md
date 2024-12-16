@@ -14,12 +14,12 @@ owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" an
 
 ## 🧡 Features
 
-- 🌟 **Switch on/off**: Can be switch on and off at anytime in the terminal or in Discord chat.
+- 🔌 **Switch on/off**: Can be switch on and off at anytime in the terminal or in Discord chat.
 - 🛠 **Auto Assign Farm Channel**: Just send a first message in a channel you want to farm after running a script.
-- 📋 **Auto Equip Gems**: Automatically equip any gem that has expired.
-- 📞 **Stop when Captcha Appear**: It will stop when the human verification message appear.
-- 🔒 **Pretty Console**: It will send just enough information in the terminal.
-- 🎵 **Beep Sound**: Make a beep sound and a loud sound for heartbeat and verification warning. Disable by default.
+- 💎 **Auto Equip Gems**: Automatically equip any gem that has expired.
+- 🛑 **Stop when Captcha Appear**: It will stop when the human verification message appear.
+- 👁 **Pretty Console**: It will send just enough information in the terminal.
+- 🎵 **Sound Effect**: Play a loud sound effect when a verification message appear. Disabled by default.
 
 ## 🔧 How to Use
 
@@ -45,7 +45,7 @@ owo-bot-farm-selfbot is a Discord self-bot script to farm OwOBot's "owo hunt" an
 
 ### sound
 
-To enable the sound, simply start the script with:
+To enable the sound effect, simply start the script with:
 
 ```
 node . --sound=true

@@ -89,10 +89,12 @@ const convertSuperscriptToNumber = (superscriptString) =>
 		.join("");
 
 // Restart Process
-const restartProcess = () => {
-	logDivider("RESTARTING PROCESS");
-	logWarning("Verification required. Restarting...");
+const restartProcess = async () => {
+	logDivider("STOPPING THE PROCESS");
+	logWarning("Verification required. Stopping...");
 	playSoundEffect("./assets/157795.mp3");
+
+	await wait(2000);
 
 	const child = spawn(process.argv[0], process.argv.slice(1), {
 		stdio: "inherit",
@@ -273,7 +275,6 @@ const spamHuntAndBattle = async () => {
 	activeChannel.sendTyping();
 	activeChannel.send("owo b");
 	logSuccess("Commands sent successfully.");
-	playSoundEffect("./assets/236676.mp3");
 
 	if (!spam) logSuccess("Successfully stopped the spam.");
 };
