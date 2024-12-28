@@ -25,7 +25,16 @@ const rl = readline.createInterface({ input: process.stdin, output: process.stdo
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const randomWait = (min, max) => wait(Math.random() * (max - min + 1) * 1000 + min * 1000);
 const playSoundEffect = (file) => playSound && player().play(file, (err) => err && console.error(err));
-const log = (type, msg) => console.log(chalk[type](`[${type.toUpperCase()}]: ${msg}`));
+const log = (type, msg) => {
+    const chalkTypes = {
+        success: chalk.green,
+        warning: chalk.yellow,
+        error: chalk.red,
+        info: chalk.cyan
+    };
+    const logFunction = chalkTypes[type] || chalk.white;
+    console.log(logFunction(`[${type.toUpperCase()}]: ${msg}`));
+};
 const logDivider = (label) => console.log(chalk.blueBright(`\n${"=".repeat(60)}\n= ${label}${" ".repeat(Math.max(0, 58 - label.length))}=\n${"=".repeat(60)}\n`));
 
 const superscriptMap = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9" };
@@ -33,12 +42,12 @@ const convertSuperscriptToNumber = (str) => str.split("").map((char) => superscr
 
 const restartProcess = async () => {
     logDivider("STOPPING THE PROCESS");
-    log("yellow", "Verification required. Stopping...");
+    log("warning", "Verification required. Stopping...");
     playSoundEffect("./assets/157795.mp3");
     await wait(2000);
     const child = spawn(process.argv[0], process.argv.slice(1), { stdio: "inherit" });
     child.on("close", (code) => {
-        log("red", `Process exited with code ${code}.`);
+        log("error", `Process exited with code ${code}.`);
         process.exit(code);
     });
     process.exit();
@@ -48,21 +57,21 @@ rl.on("line", (input) => {
     const command = input.trim().toLowerCase();
     if (command === "start") {
         spam = true;
-        log("green", "Spam started.");
-        if (!activeChannel) log("yellow", "Specify a channel by typing in a Discord channel first.");
+        log("success", "Spam started.");
+        if (!activeChannel) log("warning", "Specify a channel by typing in a Discord channel first.");
     } else if (command === "stop") {
         spam = false;
-        log("yellow", "Stopping the spam...");
+        log("warning", "Stopping the spam...");
     } else {
-        log("red", "Unknown command. Use 'start' or 'stop'.");
+        log("error", "Unknown command. Use 'start' or 'stop'.");
     }
 });
 
 client.on("ready", () => {
     logDivider("OWOBOT FARMING SCRIPT");
-    log("green", `Logged in as ${client.user.username}`);
-    log("green", `Play Sound: ${playSound}`);
-    log("green", "Commands:\nstart   : to start the spam.\nstop   : to stop the spam. (note: it will still run the command one last time)");
+    log("success", `Logged in as ${client.user.username}`);
+    log("success", `Play Sound: ${playSound}`);
+    log("success", "Commands:\nstart   : to start the spam.\nstop   : to stop the spam. (note: it will still run the command one last time)");
 });
 
 client.on("messageCreate", async (message) => {
@@ -75,20 +84,20 @@ const handleSelfCommands = (message) => {
     if (message.content === "owo hh") {
         activeChannel = message.channel;
         spam = true;
-        log("green", "Channel set and spam started.");
+        log("success", "Channel set and spam started.");
     } else if (message.content === "owo bb") {
         spam = false;
-        log("yellow", "Stopping the spam...");
+        log("warning", "Stopping the spam...");
     } else if (!activeChannel) {
         activeChannel = message.channel;
-        log("cyan", `Channel set to #${activeChannel.name}.`);
+        log("success", `Channel set to #${activeChannel.name}.`);
     }
 };
 
 const handleOwOCommands = async (message) => {
     const myself = message.guild.members.me?.nickname || client.user.displayName;
     if (message.content.includes(`**====== ${myself}'s Inventory ======**`)) {
-        log("cyan", "Parsing inventory...");
+        log("info", "Parsing inventory...");
         parseInventory(message.content);
     }
     if (message.author.id === "408785106942164992") {
@@ -108,7 +117,7 @@ const parseInventory = (content) => {
         const [id, rarityKey, typeKey, amount] = [parseInt(result[1]), result[3].charAt(0), `gem${result[4]}`, parseInt(convertSuperscriptToNumber(result[5]))];
         gemItems.push({ id, type: gemTypeNames[typeKey] || typeKey, rarity: gemRarityNames[rarityKey] || rarityKey, amount });
     }
-    log("green", "Inventory parsed successfully.");
+    log("success", "Inventory parsed successfully.");
     console.table(gemItems, ["id", "type", "rarity", "amount"]);
 };
 
@@ -120,7 +129,7 @@ const processHuntAndBattle = async (message) => {
         activeChannel.send("owo inv");
     }
     const gemAmounts = extractGemsLeft(message.content);
-    log("cyan", "Gems Remaining:");
+    log("info", "Gems Remaining:");
     console.table(gemAmounts);
     await handleMissingGems(gemAmounts);
     if (spam) await spamHuntAndBattle();
@@ -145,12 +154,12 @@ const sendCommandWithRandomWait = async (command) => {
 const handleMissingGems = async (gemAmounts) => {
     for (const [gemType, amount] of Object.entries(gemAmounts)) {
         if (amount === 0) {
-            log("yellow", `${gemType} has no remaining amount.`);
+            log("warning", `${gemType} has no remaining amount.`);
             const highestIdGem = gemItems.filter((gem) => gem.type === gemType && gem.amount > 0).reduce((highest, current) => (current.id > highest.id ? current : highest), {});
             if (highestIdGem.id) {
                 await sendCommandWithRandomWait(`owo use ${highestIdGem.id}`);
                 highestIdGem.amount -= 1;
-                log("green", `Used ${highestIdGem.rarity} ${highestIdGem.type} (ID: ${highestIdGem.id}). Remaining: ${highestIdGem.amount}`);
+                log("success", `Used ${highestIdGem.rarity} ${highestIdGem.type} (ID: ${highestIdGem.id}). Remaining: ${highestIdGem.amount}`);
             }
         }
     }
@@ -161,8 +170,8 @@ const spamHuntAndBattle = async () => {
     await randomWait(15, 20);
     await sendCommandWithRandomWait("owo h");
     await sendCommandWithRandomWait("owo b");
-    log("green", "Commands sent successfully.");
-    if (!spam) log("green", "Successfully stopped the spam.");
+    log("success", "Commands sent successfully.");
+    if (!spam) log("success", "Successfully stopped the spam.");
 };
 
 client.login(process.env.TOKEN);
