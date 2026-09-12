@@ -10,14 +10,16 @@ dotenv.config();
 const args = process.argv.slice(2);
 const client = new Client();
 let playSound = args.includes("--sound=true");
+let useStar = args.includes("--star=true");
 
 // Global Variables
 const gemItems = [];
 let spam = false;
 let activeChannel = null;
 
-const gemTypeNames = { gem1: "Hunting Gem", gem3: "Empowering Gem", gem4: "Lucky Gem" };
-const gemRarityNames = { c: "Common", u: "Uncommon", r: "Rare", e: "Epic", l: "Legendary", f: "Fable" };
+const gemTypeNames = { gem1: "Hunting Gem", gem3: "Empowering Gem", gem4: "Lucky Gem", star: "Star" };
+const gemRarityNames = { c: "Common", u: "Uncommon", r: "Rare", e: "Epic", m: "Mythical", l: "Legendary", f: "Fable" };
+const gemRarityOrder = ["Common", "Uncommon", "Rare", "Epic", "Mythical", "Legendary", "Fable"];
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
@@ -57,8 +59,8 @@ rl.on("line", (input) => {
     const command = input.trim().toLowerCase();
     if (command === "start") {
         spam = true;
-        log("success", "Spam started.");
-        if (!activeChannel) log("warning", "Specify a channel by typing in a Discord channel first.");
+        log("success", "Spam started. Send \"owoh\" in the desired channel to set it as active.");
+        if (!activeChannel) log("warning", "Specify a channel by typing \"owo h\" in the desired channel to set it as active.");
     } else if (command === "stop") {
         spam = false;
         log("warning", "Stopping the spam...");
@@ -71,6 +73,7 @@ client.on("ready", () => {
     logDivider("OWOBOT FARMING SCRIPT");
     log("success", `Logged in as ${client.user.username}`);
     log("success", `Play Sound: ${playSound}`);
+    log("success", `Use Star: ${useStar}`);
     log("success", "Commands:\nstart   : to start the spam.\nstop   : to stop the spam. (note: it will still run the command one last time)");
 });
 
@@ -98,27 +101,40 @@ const handleOwOCommands = async (message) => {
     const myself = message.guild.members.me?.nickname || client.user.displayName;
     if (message.content.includes(`**====== ${myself}'s Inventory ======**`)) {
         log("info", "Parsing inventory...");
-        parseInventory(message.content);
+        await parseInventory(message.content);
     }
     if (message.author.id === "408785106942164992") {
-        if (message.cleanContent.includes(`**🌱 | ${myself}**, hunt`)) {
+        if (message.cleanContent.includes(`**🌱 | ${myself}**, hunt`) || message.cleanContent.includes(`**🌱 | ${myself}** spent`)) {
             await processHuntAndBattle(message);
-        } else if (message.components.length && message.components[0].components[0].label === "Verify") {
+        } else if (message.components?.[0]?.components?.[0]?.label === "Verify") {
             spam = false;
             restartProcess();
         }
     }
 };
 
-const parseInventory = (content) => {
-    const regex = /`(\d+)`(<:|<a:)(cgem|ugem|rgem|egem|lgem|fgem)(\d+):\d+>(\W{2})/g;
+const parseInventory = async (content) => {
+    const regex = /`(\d+)`(<:|<a:)(?:([curemlf])gem([134])|([curemlf])star):\d+>(\W{2})/g;
     let result;
     while ((result = regex.exec(content)) !== null) {
-        const [id, rarityKey, typeKey, amount] = [parseInt(result[1]), result[3].charAt(0), `gem${result[4]}`, parseInt(convertSuperscriptToNumber(result[5]))];
-        gemItems.push({ id, type: gemTypeNames[typeKey] || typeKey, rarity: gemRarityNames[rarityKey] || rarityKey, amount });
+        const [id, rarityKey, gemTypeKey, starRarityKey, amount] = [parseInt(result[1]), result[3], result[4], result[5], parseInt(convertSuperscriptToNumber(result[6]))];
+        if (starRarityKey) {
+            gemItems.push({ id, type: "Star", rarity: gemRarityNames[starRarityKey] || starRarityKey, amount });
+        } else {
+            const typeKey = `gem${gemTypeKey}`;
+            gemItems.push({ id, type: gemTypeNames[typeKey] || typeKey, rarity: gemRarityNames[rarityKey] || rarityKey, amount });
+        }
     }
     log("success", "Inventory parsed successfully.");
     console.table(gemItems, ["id", "type", "rarity", "amount"]);
+    if (content.includes("box:")) {
+        log("info", "Box found in inventory, sending 'owo lb all'...");
+        await sendCommandWithRandomWait("owo lb all");
+    }
+    if (content.includes("crate:")) {
+        log("info", "Crate found in inventory, sending 'owo wc all'...");
+        await sendCommandWithRandomWait("owo wc all");
+    }
 };
 
 const processHuntAndBattle = async (message) => {
@@ -136,8 +152,8 @@ const processHuntAndBattle = async (message) => {
 };
 
 const extractGemsLeft = (content) => {
-    const gemAmounts = { "Hunting Gem": 0, "Empowering Gem": 0, "Lucky Gem": 0 };
-    const regex = /(gem1|gem3|gem4):\d+>`\[(\d+)/g;
+    const gemAmounts = { "Hunting Gem": 0, "Empowering Gem": 0, "Lucky Gem": 0, "Star": 0 };
+    const regex = /(gem1|gem3|gem4|star):\d+>`\[(\d+)/g;
     let result;
     while ((result = regex.exec(content)) !== null) {
         gemAmounts[gemTypeNames[result[1]] || result[1]] = parseInt(result[2]);
@@ -147,19 +163,29 @@ const extractGemsLeft = (content) => {
 
 const sendCommandWithRandomWait = async (command) => {
     activeChannel.sendTyping();
-    await randomWait(1, 2);
+    await randomWait(6, 7);
     activeChannel.send(command);
 };
 
 const handleMissingGems = async (gemAmounts) => {
     for (const [gemType, amount] of Object.entries(gemAmounts)) {
+        if (gemType === "Star" && !useStar) {
+            log("info", "Ignoring Star usage. Use --star=true to enable it.");
+            continue;
+        }
         if (amount === 0) {
             log("warning", `${gemType} has no remaining amount.`);
-            const highestIdGem = gemItems.filter((gem) => gem.type === gemType && gem.amount > 0).reduce((highest, current) => (current.id > highest.id ? current : highest), {});
-            if (highestIdGem.id) {
-                await sendCommandWithRandomWait(`owo use ${highestIdGem.id}`);
-                highestIdGem.amount -= 1;
-                log("success", `Used ${highestIdGem.rarity} ${highestIdGem.type} (ID: ${highestIdGem.id}). Remaining: ${highestIdGem.amount}`);
+            const candidates = gemItems.filter((gem) => gem.type === gemType && gem.amount > 0);
+            const highestRarityGem = candidates.reduce((highest, current) => {
+                const highestRank = gemRarityOrder.indexOf(highest.rarity);
+                const currentRank = gemRarityOrder.indexOf(current.rarity);
+                if (currentRank !== highestRank) return currentRank > highestRank ? current : highest;
+                return current.id > highest.id ? current : highest;
+            }, {});
+            if (highestRarityGem.id) {
+                await sendCommandWithRandomWait(`owo use ${highestRarityGem.id}`);
+                highestRarityGem.amount -= 1;
+                log("success", `Used ${highestRarityGem.rarity} ${highestRarityGem.type} (ID: ${highestRarityGem.id}). Remaining: ${highestRarityGem.amount}`);
             }
         }
     }
@@ -167,6 +193,7 @@ const handleMissingGems = async (gemAmounts) => {
 
 const spamHuntAndBattle = async () => {
     logDivider("SPAMMING COMMANDS");
+    log("info", "Starting spam of 'owo h' and 'owo b' commands. ~20 seconds delay between each command.");
     await randomWait(15, 20);
     await sendCommandWithRandomWait("owo h");
     await sendCommandWithRandomWait("owo b");
